@@ -1,0 +1,40 @@
+{
+  "name": "telegram-superbot",
+  "version": "1.0.0",
+  "description": "Production-grade modular Telegram bot for crypto communities",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node src/db/seeds.ts",
+    "lint": "eslint src/**/*.ts"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "prisma": "^5.14.0",
+    "@prisma/client": "^5.14.0",
+    "ioredis": "^5.3.2",
+    "ws": "^8.17.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "zod": "^3.23.8",
+    "winston": "^3.13.0",
+    "sharp": "^0.33.4",
+    "canvas": "^2.11.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/node": "^20.14.2",
+    "@types/ws": "^8.5.10",
+    "@types/node-cron": "^3.0.11",
+    "ts-node-dev": "^2.0.0",
+    "ts-node": "^10.9.2",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^9.5.0"
+  }
+}
