@@ -2,4 +2,4 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "npx prisma migrate deploy --schema=src/db/schema.prisma && node dist/index.js"
+startCommand = "npx prisma db push --schema=src/db/schema.prisma --accept-data-loss && node dist/index.js"
