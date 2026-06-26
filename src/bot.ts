@@ -1,4 +1,5 @@
 // src/bot.ts
+
 import { Telegraf, session } from 'telegraf';
 import type { BotContext } from './types/global';
 import { env } from './config/env';
@@ -116,22 +117,51 @@ export function createBot(): Telegraf<BotContext> {
   // /start & /help
   bot.start(async (ctx) => {
     await ctx.reply(
-      `👋 *Telegram SuperBot*\n\nA full-featured crypto community bot.\n\nUse /help to see all commands.`,
-      { parse_mode: 'Markdown' },
+      `🔰 *SuperBot*\n\n` +
+      `The ultimate bot for crypto communities! The best protection & token buy tracker on Telegram.\n\n` +
+      `/setup — Create a portal\n` +
+      `/config — Enter group config\n` +
+      `/settoken — Add your Solana token\n` +
+      `/help — All commands\n\n` +
+      `📖 [Documentation](https://t.me/superbotdocs)\n` +
+      `🐦 [Twitter](https://twitter.com/superbot)\n` +
+      `🔒 Privacy Statements`,
+      { parse_mode: 'Markdown', link_preview_options: { is_disabled: true } },
     );
   });
 
   bot.help(async (ctx) => {
     await ctx.reply(
-      `📖 *Available Commands*\n\n` +
-      `*Token*\n/settoken — Register your token\n/token — View token info\n\n` +
-      `*Raids*\n/raid <url> — Start a tweet raid\n/verify — Claim raid XP\n/endraid — End active raid\n/raidstats — Statistics\n\n` +
-      `*Rank*\n/rank — Your XP & level\n/leaderboard — Top members\n\n` +
-      `*Mentions*\n/mention — Tag random opted-in users\n/optin — Opt in\n/optout — Opt out\n\n` +
-      `*X Feed*\n/addfeed /removefeed /listfeeds /togglefeed\n\n` +
-      `*Moderation*\n/mute /ban /warn /unban\n\n` +
-      `*Filters*\n/addfilter /removefilter /listfilters\n\n` +
-      `*Admin*\n/enable /disable /features\n/setwelcome /togglewelcome\n/list — Global listing\n/setpro — Activate PRO\n/botstatus /auditlog`,
+      `🔰 *SuperBot Commands*\n\n` +
+      `*🪙 Token*\n` +
+      `/settoken <address> <symbol> <name>\n` +
+      `/token — View registered token\n` +
+      `/removetoken — Remove token\n\n` +
+      `*🐦 Raids*\n` +
+      `/raid <tweet_url> — Start a raid\n` +
+      `/verify — Claim your raid XP\n` +
+      `/endraid — Close active raid\n` +
+      `/raidstats — Raid statistics\n\n` +
+      `*🏆 Rank*\n` +
+      `/rank — Your XP & level\n` +
+      `/leaderboard — Top members\n\n` +
+      `*📣 Mentions*\n` +
+      `/mention — Tag opted-in members\n` +
+      `/optin — Join mention pool\n` +
+      `/optout — Leave mention pool\n\n` +
+      `*🧵 X Feed*\n` +
+      `/addfeed /removefeed /listfeeds /togglefeed\n\n` +
+      `*🛡 Moderation*\n` +
+      `/mute /ban /warn /unban\n\n` +
+      `*🚫 Filters*\n` +
+      `/addfilter /removefilter /listfilters\n\n` +
+      `*👋 Welcome*\n` +
+      `/setwelcome /togglewelcome\n\n` +
+      `*⚙️ Admin*\n` +
+      `/enable /disable /features\n` +
+      `/list — Global listing\n` +
+      `/setpro — Activate PRO\n` +
+      `/botstatus /auditlog`,
       { parse_mode: 'Markdown' },
     );
   });
