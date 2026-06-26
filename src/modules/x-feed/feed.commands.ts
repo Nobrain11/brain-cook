@@ -4,7 +4,6 @@ import type { Telegraf } from 'telegraf';
 import type { BotContext } from '../../types/global';
 import { requireAdmin } from '../../config/permissions';
 import { addFeed, removeFeed, listFeeds, toggleFeed } from './feed.settings';
-import { logger } from '../../utils/logger';
 
 export function registerFeedCommands(bot: Telegraf<BotContext>): void {
 
