@@ -1,5 +1,6 @@
 // src/modules/admin/audit.log.ts
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../db/client';
 import { logger } from '../../utils/logger';
 
@@ -11,7 +12,7 @@ export async function writeAuditLog(
 ): Promise<void> {
   try {
     await prisma.auditLog.create({
-      data: { chatId, adminId, action, details: details ?? {} },
+      data: { chatId, adminId, action, details: (details ?? {}) as Prisma.InputJsonValue },
     });
   } catch (err) {
     logger.warn('[audit.log] Failed to write audit log', { chatId, adminId, action, err });
@@ -32,12 +33,12 @@ export async function getRecentAuditLogs(chatId: string, limit = 20) {
 }
 
 export function formatAuditLogs(logs: Awaited<ReturnType<typeof getRecentAuditLogs>>): string {
-  if (logs.length === 0) return '📭 No audit logs yet.';
+  if (logs.length === 0) return 'ð­ No audit logs yet.';
 
   const lines = logs.map((l) => {
     const ts = l.createdAt.toISOString().replace('T', ' ').slice(0, 19);
-    return `• \`${ts}\` [${l.action}] by \`${l.adminId}\``;
+    return `â¢ \`${ts}\` [${l.action}] by \`${l.adminId}\``;
   });
 
-  return `📋 *Audit Log (last ${logs.length})*\n\n${lines.join('\n')}`;
+  return `ð *Audit Log (last ${logs.length})*\n\n${lines.join('\n')}`;
 }
