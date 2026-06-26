@@ -1,11 +1,10 @@
 // src/modules/token/token.validate.ts
+// Solana-only validation
 
-import { isValidTokenAddress, isValidUrl } from '../../utils/validator';
-import type { Chain } from '../../types/global';
+import { isValidSolanaAddress, isValidUrl } from '../../utils/validator';
 
 export interface TokenInput {
   address: string;
-  chain: Chain;
   symbol: string;
   name: string;
   website?: string;
@@ -23,20 +22,19 @@ export function validateTokenInput(input: Partial<TokenInput>): ValidationResult
 
   if (!input.address) {
     errors.push('Token address is required.');
-  } else if (input.chain && !isValidTokenAddress(input.address, input.chain)) {
-    errors.push(`Invalid token address for chain: ${input.chain}.`);
+  } else if (!isValidSolanaAddress(input.address)) {
+    errors.push('Invalid Solana token address.');
   }
 
-  if (!input.chain) errors.push('Chain is required (solana, eth, bsc, base).');
   if (!input.symbol || input.symbol.length < 1) errors.push('Token symbol is required.');
   if (!input.name || input.name.length < 1) errors.push('Token name is required.');
 
-  if (input.website && !isValidUrl(input.website)) {
-    errors.push('Website must be a valid URL.');
-  }
-
   if (input.symbol && input.symbol.length > 12) {
     errors.push('Symbol must be 12 characters or fewer.');
+  }
+
+  if (input.website && !isValidUrl(input.website)) {
+    errors.push('Website must be a valid URL.');
   }
 
   return { valid: errors.length === 0, errors };
