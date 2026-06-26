@@ -12,7 +12,7 @@ import { awardRaidXp } from './raid.rewards';
 import { LIMITS } from '../../config/limits';
 
 export function registerRaidCommands(bot: Telegraf<BotContext>): void {
-  // /raid <tweet_url> — admin starts a raid
+
   bot.command('raid', async (ctx) => {
     try {
       if (!(await requireAdmin(ctx))) return;
@@ -33,7 +33,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
 
       const chatId = String(ctx.chat.id);
 
-      // Check no active raid
       const existing = await prisma.raidSession.findFirst({
         where: { chatId, active: true },
       });
@@ -42,7 +41,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
         return;
       }
 
-      // Verify tweet is reachable
       const exists = await verifyTweetExists(tweetId);
       if (!exists) {
         await ctx.reply('❌ Could not find that tweet. Check the URL and try again.');
@@ -67,7 +65,7 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
         `👉 [Open Tweet](${tweetUrl})\n\n` +
         `Like, Retweet, and Comment — then use /verify to claim your XP!\n\n` +
         `⏱ Raid closes in 30 minutes.`,
-        { parse_mode: 'Markdown', disable_web_page_preview: true },
+        { parse_mode: 'Markdown', link_preview_options: { is_disabled: true } },
       );
 
       logger.info('[raid] Raid started', { chatId, tweetId, by: ctx.from.id });
@@ -77,7 +75,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
     }
   });
 
-  // /verify — user claims raid completion
   bot.command('verify', async (ctx) => {
     try {
       const chatId = String(ctx.chat.id);
@@ -93,7 +90,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
         return;
       }
 
-      // Cooldown check
       if (await isRaidOnCooldown(chatId, userId)) {
         const remaining = await getRaidCooldownRemaining(chatId, userId);
         const mins = Math.ceil(remaining / 60000);
@@ -101,7 +97,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
         return;
       }
 
-      // Check already completed
       const existing = await prisma.raidCompletion.findUnique({
         where: { sessionId_userId: { sessionId: session.id, userId } },
       });
@@ -116,7 +111,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
         return;
       }
 
-      // Record completion
       await prisma.raidCompletion.upsert({
         where: { sessionId_userId: { sessionId: session.id, userId } },
         create: { sessionId: session.id, userId, username, verified: true },
@@ -136,7 +130,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
     }
   });
 
-  // /endraid — admin closes active raid
   bot.command('endraid', async (ctx) => {
     try {
       if (!(await requireAdmin(ctx))) return;
@@ -166,7 +159,6 @@ export function registerRaidCommands(bot: Telegraf<BotContext>): void {
     }
   });
 
-  // /raidstats — show raid stats
   bot.command('raidstats', async (ctx) => {
     try {
       const chatId = String(ctx.chat.id);
