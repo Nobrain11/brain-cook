@@ -25,7 +25,6 @@ export async function sendCaptcha(
   username: string | undefined,
 ): Promise<void> {
   try {
-    // Restrict immediately
     await bot.telegram.restrictChatMember(chatId, userId, {
       permissions: { can_send_messages: false },
     });
@@ -40,7 +39,6 @@ export async function sendCaptcha(
       { parse_mode: 'Markdown' },
     );
 
-    // Auto-ban if not solved in time
     setTimeout(async () => {
       const remaining = await cache.get(captchaKey(chatId, String(userId)));
       if (remaining !== null) {
@@ -64,15 +62,19 @@ export async function verifyCaptcha(
   const key = captchaKey(chatId, String(userId));
   const expected = await cache.get(key);
 
-  if (expected === null) return false; // No pending captcha
+  if (expected === null) return false;
 
   if (input.trim() === expected) {
     await cache.del(key);
     await bot.telegram.restrictChatMember(chatId, userId, {
       permissions: {
         can_send_messages: true,
-        can_send_media_messages: true,
-        can_send_other_messages: true,
+        can_send_audios: true,
+        can_send_documents: true,
+        can_send_photos: true,
+        can_send_videos: true,
+        can_send_video_notes: true,
+        can_send_voice_notes: true,
         can_add_web_page_previews: true,
       },
     });
