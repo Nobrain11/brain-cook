@@ -5,17 +5,10 @@ import type { BotContext } from '../../types/global';
 import { requireAdmin } from '../../config/permissions';
 import { getFilterRules, addFilterRule, removeFilterRule } from './filter.rules';
 import { addFilterExempt, removeFilterExempt } from './filter.exempt';
-import { logger } from '../../utils/logger';
 import type { FilterType, FilterAction } from './filter.rules';
 
 export function registerFilterCommands(bot: Telegraf<BotContext>): void {
 
-  /**
-   * /addfilter <type> <action> <value>
-   * type: keyword | link | regex
-   * action: delete | mute | ban
-   * Example: /addfilter keyword delete buy more
-   */
   bot.command('addfilter', async (ctx) => {
     if (!(await requireAdmin(ctx))) return;
 
