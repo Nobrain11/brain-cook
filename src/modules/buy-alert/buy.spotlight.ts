@@ -1,10 +1,9 @@
 // src/modules/buy-alert/buy.spotlight.ts
-// Posts a follow-up data spotlight after a buy alert.
 
 import type { Telegraf } from 'telegraf';
 import type { BotContext, BuyEvent } from '../../types/global';
 import { pricingService } from '../../services/pricing.service';
-import { formatUsd, formatNumber } from '../../utils/formatter';
+import { formatUsd } from '../../utils/formatter';
 import { logger } from '../../utils/logger';
 
 export async function postSpotlight(
@@ -25,7 +24,7 @@ export async function postSpotlight(
 
     await bot.telegram.sendMessage(chatId, text, {
       parse_mode: 'Markdown',
-      reply_to_message_id: replyToMessageId,
+      reply_parameters: { message_id: replyToMessageId },
     });
   } catch (err) {
     logger.warn('[buy.spotlight] Failed to post spotlight', { chatId, err });
