@@ -1,0 +1,270 @@
+// src/db/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Groups ───────────────────────────────────────────────────────────────────
+
+model Group {
+  id          String   @id                         // Telegram chat ID as string
+  title       String
+  plan        String   @default("free")            // "free" | "pro"
+  planExpiry  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  token            Token?
+  featureToggles   FeatureToggle[]
+  raidSessions     RaidSession[]
+  xFeeds           XFeed[]
+  buyAlertSettings BuyAlertSettings?
+  volumeSettings   VolumeSettings?
+  mentionSettings  MentionSettings?
+  modSettings      ModerationSettings?
+  welcomeSettings  WelcomeSettings?
+  filterRules      FilterRule[]
+  listings         Listing[]
+  auditLogs        AuditLog[]
+  members          GroupMember[]
+}
+
+// ─── Token ────────────────────────────────────────────────────────────────────
+
+model Token {
+  id           String   @id @default(cuid())
+  chatId       String   @unique
+  address      String
+  chain        String                              // "solana"|"eth"|"bsc"|"base"
+  symbol       String
+  name         String
+  logoUrl      String?
+  website      String?
+  twitter      String?
+  telegram     String?
+  registeredAt DateTime @default(now())
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+// ─── Feature Toggles ─────────────────────────────────────────────────────────
+
+model FeatureToggle {
+  id      String  @id @default(cuid())
+  chatId  String
+  feature String
+  enabled Boolean @default(true)
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, feature])
+}
+
+// ─── Raid ─────────────────────────────────────────────────────────────────────
+
+model RaidSession {
+  id          String    @id @default(cuid())
+  chatId      String
+  tweetId     String
+  tweetUrl    String
+  startedBy   String                              // userId
+  active      Boolean   @default(true)
+  startedAt   DateTime  @default(now())
+  endsAt      DateTime
+  completedAt DateTime?
+
+  group       Group        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  completions RaidCompletion[]
+}
+
+model RaidCompletion {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  username  String?
+  verified  Boolean  @default(false)
+  xpAwarded Int      @default(0)
+  createdAt DateTime @default(now())
+
+  session RaidSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+}
+
+// ─── X Feed ───────────────────────────────────────────────────────────────────
+
+model XFeed {
+  id          String   @id @default(cuid())
+  chatId      String
+  xUsername   String                              // Twitter/X handle without @
+  lastTweetId String?
+  enabled     Boolean  @default(true)
+  addedAt     DateTime @default(now())
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, xUsername])
+}
+
+// ─── Buy Alert Settings ───────────────────────────────────────────────────────
+
+model BuyAlertSettings {
+  id                  String  @id @default(cuid())
+  chatId              String  @unique
+  enabled             Boolean @default(false)
+  minBuyUsd           Float   @default(10)
+  mediaUrl            String?                     // image/gif/video URL
+  mediaType           String?                     // "image"|"gif"|"video"
+  autoPinEnabled      Boolean @default(false)
+  spotlightEnabled    Boolean @default(true)
+  announcementChatId  String?
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+// ─── Volume Settings ──────────────────────────────────────────────────────────
+
+model VolumeSettings {
+  id                    String  @id @default(cuid())
+  chatId                String  @unique
+  enabled               Boolean @default(false)
+  milestones            Json    @default("[10000,50000,100000,500000,1000000]")
+  announcementChannelId String?
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+// ─── Mention Settings ─────────────────────────────────────────────────────────
+
+model MentionSettings {
+  id         String  @id @default(cuid())
+  chatId     String  @unique
+  enabled    Boolean @default(true)
+  maxPerCall Int     @default(5)
+
+  group   Group          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  optIns  MentionOptIn[]
+}
+
+model MentionOptIn {
+  id        String   @id @default(cuid())
+  chatId    String
+  userId    String
+  username  String?
+  optedInAt DateTime @default(now())
+
+  settings MentionSettings @relation(fields: [chatId], references: [chatId], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+// ─── Moderation ───────────────────────────────────────────────────────────────
+
+model ModerationSettings {
+  id                String  @id @default(cuid())
+  chatId            String  @unique
+  spamEnabled       Boolean @default(true)
+  linkGuardEnabled  Boolean @default(true)
+  captchaEnabled    Boolean @default(false)
+  autoMuteEnabled   Boolean @default(true)
+  autoBanEnabled    Boolean @default(false)
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+model ModerationAction {
+  id         String   @id @default(cuid())
+  chatId     String
+  userId     String
+  username   String?
+  action     String                              // "mute"|"ban"|"warn"|"captcha"
+  reason     String
+  duration   Int?                                // seconds
+  createdAt  DateTime @default(now())
+}
+
+// ─── Rank / XP ────────────────────────────────────────────────────────────────
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  chatId    String
+  userId    String
+  username  String?
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+// ─── Welcome ─────────────────────────────────────────────────────────────────
+
+model WelcomeSettings {
+  id          String  @id @default(cuid())
+  chatId      String  @unique
+  enabled     Boolean @default(true)
+  message     String  @default("👋 Welcome to the group, {name}!")
+  imageUrl    String?
+  showButtons Boolean @default(true)
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+// ─── Filters ─────────────────────────────────────────────────────────────────
+
+model FilterRule {
+  id        String   @id @default(cuid())
+  chatId    String
+  type      String                              // "keyword"|"link"|"regex"
+  value     String
+  action    String   @default("delete")        // "delete"|"mute"|"ban"
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, type, value])
+}
+
+model FilterExempt {
+  id     String @id @default(cuid())
+  chatId String
+  userId String
+
+  @@unique([chatId, userId])
+}
+
+// ─── Listings ─────────────────────────────────────────────────────────────────
+
+model Listing {
+  id          String   @id @default(cuid())
+  chatId      String
+  tokenSymbol String
+  message     String
+  confirmed   Boolean  @default(false)
+  postedAt    DateTime?
+  createdAt   DateTime @default(now())
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  chatId    String
+  adminId   String
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
