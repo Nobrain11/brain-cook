@@ -41,7 +41,6 @@ async function processFeed(
 
     if (originals.length === 0) return;
 
-    // Update last seen tweet ID
     await updateLastTweetId(feed.id, originals[0].id);
 
     for (const tweet of originals.reverse()) {
@@ -50,7 +49,7 @@ async function processFeed(
 
       await bot.telegram.sendMessage(feed.chatId, text, {
         parse_mode: 'Markdown',
-        disable_web_page_preview: false,
+        link_preview_options: { is_disabled: false },
       });
     }
 
