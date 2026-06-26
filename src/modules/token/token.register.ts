@@ -1,46 +1,56 @@
 // src/modules/token/token.register.ts
+// Solana-only token registration. Command: /settoken <address> <symbol> <name>
 
 import type { Telegraf } from 'telegraf';
-import type { BotContext, Chain } from '../../types/global';
+import type { BotContext } from '../../types/global';
 import { requireAdmin } from '../../config/permissions';
 import { prisma } from '../../db/client';
 import { logger } from '../../utils/logger';
 import { validateTokenInput } from './token.validate';
 import { formatTokenInfo, getTokenMeta } from './token.meta';
 import { blockchainService } from '../../services/blockchain.service';
-import { isValidChain } from '../../utils/validator';
 
 export function registerTokenCommands(bot: Telegraf<BotContext>): void {
 
   /**
-   * /settoken <address> <chain> <symbol> <name>
-   * Example: /settoken So11111... solana SOL Solana
+   * /settoken <address> <symbol> <name>
+   * Example: /settoken EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v USDC USD Coin
+   * Chain is always Solana.
    */
   bot.command('settoken', async (ctx) => {
     if (!(await requireAdmin(ctx))) return;
 
     const parts = ctx.message.text.split(' ').slice(1);
-    const [address, chain, symbol, ...nameParts] = parts;
+    const [address, symbol, ...nameParts] = parts;
     const name = nameParts.join(' ');
 
-    const validation = validateTokenInput({ address, chain: chain as Chain, symbol, name });
-    if (!validation.valid) {
-      await ctx.reply(`❌ Invalid token details:\n${validation.errors.map((e) => `• ${e}`).join('\n')}\n\nUsage: /settoken <address> <chain> <symbol> <name>`);
+    if (!address || !symbol || !name) {
+      await ctx.reply(
+        '❌ Usage: /settoken <address> <symbol> <name>\n\n' +
+        'Example:\n`/settoken EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v USDC USD Coin`',
+        { parse_mode: 'Markdown' },
+      );
       return;
     }
 
-    if (!isValidChain(chain)) {
-      await ctx.reply('❌ Invalid chain. Use: solana, eth, bsc, base');
+    const validation = validateTokenInput({ address, symbol, name });
+    if (!validation.valid) {
+      await ctx.reply(`❌ ${validation.errors.join('\n')}`);
       return;
     }
 
     const chatId = String(ctx.chat.id);
+    const chain = 'solana';
 
     try {
-      // Ensure group exists
       await prisma.group.upsert({
         where: { id: chatId },
-        create: { id: chatId, title: ctx.chat.type !== 'private' ? (ctx.chat as { title?: string }).title ?? 'Unknown' : 'Unknown' },
+        create: {
+          id: chatId,
+          title: ctx.chat.type !== 'private'
+            ? (ctx.chat as { title?: string }).title ?? 'Unknown'
+            : 'Unknown',
+        },
         update: {},
       });
 
@@ -50,21 +60,20 @@ export function registerTokenCommands(bot: Telegraf<BotContext>): void {
         update: { address, chain, symbol: symbol.toUpperCase(), name },
       });
 
-      // Register with blockchain listener
-      blockchainService.watchToken(chain as Chain, address);
+      blockchainService.watchToken(chain, address);
 
       await ctx.reply(
-        `✅ Token registered!\n\n` +
-        `🪙 *${name} (${symbol.toUpperCase()})*\n` +
-        `⛓ Chain: \`${chain.toUpperCase()}\`\n` +
-        `📍 Address: \`${address}\``,
+        `✅ *Token Registered!*\n\n` +
+        `🪙 ${name} (${symbol.toUpperCase()})\n` +
+        `⛓ Chain: Solana\n` +
+        `📍 CA: \`${address}\``,
         { parse_mode: 'Markdown' },
       );
 
-      logger.info('[token] Token registered', { chatId, address, chain, symbol });
+      logger.info('[token] Token registered', { chatId, address, symbol });
     } catch (err) {
       logger.error('[token] settoken failed', { chatId, err });
-      await ctx.reply('❌ Failed to register token.');
+      await ctx.reply('❌ Failed to register token. Try again.');
     }
   });
 
